@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Books - BookHub{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="text-2xl font-semibold text-gray-900">Book Catalogue</h1>
+            <p class="mt-2 text-sm text-gray-700">
+                Discover amazing books in our collection. Use the search to find exactly what you're looking for.
+            </p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <a href="{% url 'catalogue:search' %}"
+               class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                🔍 Advanced Search
+            </a>
+        </div>
+    </div>
+
+    {% if books %}
+        <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for book in books %}
+                <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <span class="text-blue-600 font-semibold text-lg">📖</span>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-lg font-medium text-gray-900 truncate">
+                                    <a href="{% url 'catalogue:book_detail' book.id %}" 
+                                       class="hover:text-blue-600">
+                                        {{ book.title }}
+                                    </a>
+                                </h3>
+                                <p class="text-sm text-gray-500">{{ book.author }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{ book.genre }}
+                                </span>
+                                <span class="text-sm text-gray-500">{{ book.published_year }}</span>
+                            </div>
+                            
+                            <p class="mt-2 text-sm text-gray-600 line-clamp-3">
+                                {{ book.description|truncatewords:20 }}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="{% url 'catalogue:book_detail' book.id %}"
+                               class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Read more →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <div class="mx-auto h-24 w-24 text-gray-400">
+                📚
+            </div>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No books found</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding some books to the catalogue.</p>
+            <div class="mt-6">
+                <a href="/admin/catalogue/book/add/"
+                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Add Book
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

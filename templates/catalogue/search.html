@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Books - BookHub{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-2xl font-semibold text-gray-900">Search Books</h1>
+        <p class="mt-2 text-sm text-gray-700">
+            Find books instantly with our lightning-fast search powered by Algolia.
+        </p>
+    </div>
+
+    <div id="search-container">
+        <!-- Search Box -->
+        <div class="mb-6">
+            <div id="searchbox" class="max-w-2xl"></div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Filters Sidebar -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Filters</h3>
+                    
+                    <!-- Genre Filter -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Genre</h4>
+                        <div id="genre-list"></div>
+                    </div>
+                    
+                    <!-- Author Filter -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Author</h4>
+                        <div id="author-list"></div>
+                    </div>
+                    
+                    <!-- Year Filter -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Publication Year</h4>
+                        <div id="year-list"></div>
+                    </div>
+                    
+                    <!-- Clear Filters -->
+                    <div id="clear-refinements"></div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="lg:w-3/4">
+                <!-- Stats -->
+                <div class="mb-4">
+                    <div id="stats" class="text-sm text-gray-600"></div>
+                </div>
+
+                <!-- Hits -->
+                <div class="mt-8">
+                    <div id="hits"></div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex justify-center">
+                    <div id="pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Algolia InstantSearch.js -->
+<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+
+<style>
+/* Complete override of InstantSearch.js default styling */
+#hits {
+    display: block !important;
+}
+
+#hits .ais-Hits {
+    display: block !important;
+    width: 100% !important;
+}
+
+#hits .ais-Hits-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 1.5rem !important; /* gap-6 equivalent */
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#hits .ais-Hits-item {
+    /* Flexbox approach for exact 2-column layout */
+    flex: 0 0 calc(47% - 0.5rem) !important; /* 2 columns with smaller width */
+    display: block !important;
+    list-style: none !important;
+    min-height: 250px !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+/* Responsive behavior */
+@media (max-width: 639px) {
+    #hits .ais-Hits-item {
+        flex: 0 0 100% !important; /* 1 column on mobile */
+    }
+}
+
+/* Ensure cards fill their containers */
+#hits .ais-Hits-item > div {
+    height: 100% !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+</style>
+
+{% verbatim %}
+<script>
+// Initialize Algolia client
+const searchClient = algoliasearch('{% endverbatim %}{{ algolia_app_id }}{% verbatim %}', '{% endverbatim %}{{ algolia_search_key }}{% verbatim %}');
+
+// Initialize InstantSearch
+const search = instantsearch({
+    indexName: 'Book',
+    searchClient,
+    routing: true,
+});
+
+// Add widgets
+search.addWidgets([
+    // Configure pagination settings
+    instantsearch.widgets.configure({
+        hitsPerPage: 10, // 5 rows × 2 columns = 10 results per page
+    }),
+
+    // Search box
+    instantsearch.widgets.searchBox({
+        container: '#searchbox',
+        placeholder: 'Search for books, authors, or descriptions...',
+        cssClasses: {
+            root: 'relative',
+            form: 'relative',
+            input: 'block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm',
+            submit: 'absolute left-0 top-0 mt-4 ml-3',
+            reset: 'absolute right-0 top-0 mt-4 mr-3',
+        },
+    }),
+
+    // Stats
+    instantsearch.widgets.stats({
+        container: '#stats',
+        templates: {
+            text: '{{#hasNoResults}}No results{{/hasNoResults}}{{#hasOneResult}}1 result{{/hasOneResult}}{{#hasManyResults}}{{#helpers.formatNumber}}{{nbHits}}{{/helpers.formatNumber}} results{{/hasManyResults}} found in {{processingTimeMS}}ms',
+        },
+    }),
+
+    // Hits
+    instantsearch.widgets.hits({
+        container: '#hits',
+        templates: {
+            item: `
+                <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <span class="text-blue-600 font-semibold text-lg">📖</span>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-lg font-medium text-gray-900 truncate">
+                                    <a href="/book/{{objectID}}/" class="hover:text-blue-600">
+                                        {{{_highlightResult.title.value}}}
+                                    </a>
+                                </h3>
+                                <p class="text-sm text-gray-500">{{{_highlightResult.author.value}}}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    {{genre}}
+                                </span>
+                                <span class="text-sm text-gray-500">{{published_year}}</span>
+                            </div>
+                            
+                            <p class="mt-2 text-sm text-gray-600 line-clamp-3">
+                                {{{_highlightResult.description.value}}}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="/book/{{objectID}}/"
+                               class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Read more →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `,
+            empty: `
+                <div class="col-span-full text-center py-12">
+                    <div class="mx-auto h-24 w-24 text-gray-400 text-6xl">📚</div>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No books found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
+                </div>
+            `,
+        },
+    }),
+
+    // Genre refinement list
+    instantsearch.widgets.refinementList({
+        container: '#genre-list',
+        attribute: 'genre',
+        limit: 10,
+        cssClasses: {
+            list: 'space-y-2',
+            item: 'flex items-center',
+            label: 'flex items-center cursor-pointer text-sm',
+            checkbox: 'mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded',
+            labelText: 'text-gray-700',
+            count: 'ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full',
+        },
+    }),
+
+    // Author refinement list
+    instantsearch.widgets.refinementList({
+        container: '#author-list',
+        attribute: 'author',
+        limit: 8,
+        searchable: true,
+        searchablePlaceholder: 'Search authors...',
+        cssClasses: {
+            list: 'space-y-2',
+            item: 'flex items-center',
+            label: 'flex items-center cursor-pointer text-sm',
+            checkbox: 'mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded',
+            labelText: 'text-gray-700',
+            count: 'ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full',
+            searchBox: 'mb-3',
+        },
+    }),
+
+    // Publication year refinement list
+    instantsearch.widgets.refinementList({
+        container: '#year-list',
+        attribute: 'published_year',
+        limit: 10,
+        sortBy: ['name:desc'],
+        cssClasses: {
+            list: 'space-y-2',
+            item: 'flex items-center',
+            label: 'flex items-center cursor-pointer text-sm',
+            checkbox: 'mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded',
+            labelText: 'text-gray-700',
+            count: 'ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full',
+        },
+    }),
+
+    // Clear refinements
+    instantsearch.widgets.clearRefinements({
+        container: '#clear-refinements',
+        templates: {
+            resetLabel: 'Clear all filters',
+        },
+        cssClasses: {
+            button: 'w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded text-sm transition-colors duration-200',
+        },
+    }),
+
+    // Pagination
+    instantsearch.widgets.pagination({
+        container: '#pagination',
+        cssClasses: {
+            list: 'flex space-x-1',
+            item: 'px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700',
+            selectedItem: 'px-3 py-2 text-sm leading-tight text-blue-600 bg-blue-50 border border-blue-300',
+            disabledItem: 'px-3 py-2 text-sm leading-tight text-gray-300 bg-white border border-gray-300 cursor-not-allowed',
+            firstPageItem: 'rounded-l-lg',
+            lastPageItem: 'rounded-r-lg',
+        },
+    }),
+]);
+
+// Start the search
+search.start();
+</script>
+{% endverbatim %}
+{% endblock %} 

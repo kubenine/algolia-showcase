@@ -1,0 +1,4 @@
+Django>=5.0,<6.0
+algoliasearch-django>=4.0.0
+algoliasearch>=4.0.0
+python-dotenv>=1.0.0 
