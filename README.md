@@ -19,6 +19,35 @@ A modern book catalogue application demonstrating how to integrate Algolia searc
 - **Frontend**: Tailwind CSS + InstantSearch.js
 - **Database**: SQLite (development)
 
+## Architecture
+
+```mermaid
+graph TD
+    A[Frontend] --> B[Django Views]
+    A --> F[Algolia API]
+    
+    subgraph Django[Django Application]
+        B[Views & Templates]
+        C[Models & Signals]
+        D[Algolia Python Client]
+        E[Management Commands]
+        G[Model Changes Save/Delete]
+        H[Bulk Operations]
+        I[Index Update Tasks]
+        
+        G --> C
+        C --> I
+        I --> D
+        E --> H
+        H --> D
+    end
+    
+    D -->|"Data Sync<br/>(Create/Update/Delete)"| F
+    F --> J[Algolia Search Index]
+    
+    style A fill:#ffd700
+```
+
 ## 📋 Prerequisites
 
 - Python 3.8+
